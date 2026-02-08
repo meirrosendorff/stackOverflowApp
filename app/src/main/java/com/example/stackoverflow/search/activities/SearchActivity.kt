@@ -89,26 +89,29 @@ fun StackOverflowScreen(viewModel: SearchViewModel = hiltViewModel()) {
     Column {
         StackOverflowTopBar()
         SearchBar(query, onQueryChange = viewModel::onQueryChange)
-        SearchResult()
+        SearchResults(viewModel)
     }
 }
 
 @Composable
-fun SearchResult(viewModel: SearchViewModel = hiltViewModel()) {
-    val state by viewModel.results.collectAsState()
+fun SearchResults(viewModel: SearchViewModel = hiltViewModel()) {
+    val questions by viewModel.questions.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
-    when (state) {
-        is StackoverflowResult.Loading -> {
+    when {
+        isLoading && questions.isEmpty() -> {
             ProgressIndicator()
         }
-        is StackoverflowResult.Success -> {
-            QuestionList((state as StackoverflowResult.Success).data)
-        }
-        is StackoverflowResult.Error -> {
+        error != null && questions.isEmpty() -> {
             Text(
-                text = "Error: ${(state as StackoverflowResult.Error).throwable.message}",
-                color = Color.Red
+                text = "Error: $error",
+                color = Color.Red,
+                modifier = Modifier.padding(16.dp)
             )
+        }
+        else -> {
+            QuestionList(questions, isLoading, onLoadMore = viewModel::loadMore)
         }
     }
 }
@@ -136,11 +139,38 @@ fun ProgressIndicator() {
 
 
 @Composable
-fun QuestionList(questions: List<Question>) {
+fun QuestionList(questions: List<Question>, isLoadingMore: Boolean = false, onLoadMore: () -> Unit = {}) {
     LazyColumn {
         items(questions) { question ->
             QuestionRow(question)
             HorizontalDivider()
+        }
+
+        if (isLoadingMore) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+            ) {
+                if (questions.isNotEmpty()) {
+                    androidx.compose.runtime.LaunchedEffect(Unit) {
+                        onLoadMore()
+                    }
+                }
+            }
         }
     }
 }

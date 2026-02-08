@@ -7,47 +7,94 @@ import com.example.stackoverflow.repository.models.StackoverflowResult
 import com.example.stackoverflow.repository.stackoverflowRepository.interfaces.StackOverflowRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SearchViewModel @Inject constructor(repository: StackOverflowRepository): ViewModel() {
+class SearchViewModel @Inject constructor(private val repository: StackOverflowRepository): ViewModel() {
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query
 
-    fun onQueryChange(text: String) {
-        _query.value = text
+    private val _questions = MutableStateFlow<List<Question>>(emptyList())
+    val questions: StateFlow<List<Question>> = _questions
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
+    private var currentPage = 1
+    private var hasMore = true
+    private var isLoadingMore = false
+
+    init {
+        viewModelScope.launch {
+            query
+                .debounce(DEBOUNCE_DELAY)
+                .distinctUntilChanged()
+                .filter { it.length >= MIN_SEARCH_LENGTH }
+                .collect { q ->
+                    searchQuestions(q)
+                }
+        }
     }
 
-    val results: StateFlow<StackoverflowResult<List<Question>>> =
-        query
-            .debounce(DEBOUNCE_DELAY)
-            .distinctUntilChanged()
-            .filter { it.length >= MIN_SEARCH_LENGTH }
-            .flatMapLatest { q ->
-                flow {
-                    emit(StackoverflowResult.Loading)
-                    val result = repository.searchQuestions(q)
-                    emit(result)
-                }
+    fun onQueryChange(text: String) {
+        _query.value = text
+        currentPage = 1
+        hasMore = true
+        _questions.value = emptyList()
+    }
+
+    private suspend fun searchQuestions(searchQuery: String) {
+        _isLoading.value = true
+        _error.value = null
+
+        when (val result = repository.searchQuestions(searchQuery, 1)) {
+            is StackoverflowResult.Success -> {
+                _questions.value = result.data.items
+                hasMore = result.data.has_more
+                currentPage = 1
             }
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(SHARING_DELAY),
-                StackoverflowResult.Success(emptyList())
-            )
+            is StackoverflowResult.Error -> {
+                _error.value = result.throwable.message
+            }
+            else -> {}
+        }
+        _isLoading.value = false
+    }
+
+    fun loadMore() {
+        if (isLoadingMore || !hasMore || _query.value.length < MIN_SEARCH_LENGTH) return
+
+        isLoadingMore = true
+        _isLoading.value = true
+        viewModelScope.launch {
+            val nextPage = currentPage + 1
+            when (val result = repository.searchQuestions(_query.value, nextPage)) {
+                is StackoverflowResult.Success -> {
+                    _questions.value = _questions.value + result.data.items
+                    hasMore = result.data.has_more
+                    currentPage = nextPage
+                }
+                is StackoverflowResult.Error -> {
+                    _error.value = result.throwable.message
+                }
+                else -> {}
+            }
+            isLoadingMore = false
+            _isLoading.value = false
+        }
+    }
 
     private companion object {
         const val DEBOUNCE_DELAY = 300L
         const val MIN_SEARCH_LENGTH = 3
-        const val SHARING_DELAY = 5000L
     }
 }
