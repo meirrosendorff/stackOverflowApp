@@ -1,14 +1,18 @@
 package com.example.stackoverflow.injection
 
+import android.content.Context
 import com.example.stackoverflow.repository.stackoverflowApi.interfaces.StackoverflowApi
 import com.example.stackoverflow.repository.stackoverflowRepository.implementations.StackOverflowRepositoryImplementation
 import com.example.stackoverflow.repository.stackoverflowRepository.interfaces.StackOverflowRepository
+import com.example.stackoverflow.utils.implementations.NetworkConnectivityCheckerImplementation
+import com.example.stackoverflow.utils.interfaces.NetworkConnectivityChecker
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import jakarta.inject.Singleton
 import retrofit2.Retrofit
@@ -41,4 +45,10 @@ object StackoverflowModule {
     @Singleton
     fun providesStackoverflowRepository(api: StackoverflowApi): StackOverflowRepository =
         StackOverflowRepositoryImplementation(api)
+
+    @Provides
+    @Singleton
+    fun provideNetworkConnectivityChecker(
+        @ApplicationContext context: Context
+    ): NetworkConnectivityChecker = NetworkConnectivityCheckerImplementation(context)
 }

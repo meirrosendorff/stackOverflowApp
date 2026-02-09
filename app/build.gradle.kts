@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.hilt.compose)
     implementation(libs.androidx.compose.ui)
     implementation(libs.io.coil)
+    implementation(libs.io.coil.gif)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

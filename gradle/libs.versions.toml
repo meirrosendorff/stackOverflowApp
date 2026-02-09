@@ -42,6 +42,7 @@ retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = 
 retrofit-converter = { group = "com.squareup.retrofit2", name = "converter-jackson", version.ref = "retrofit"}
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 io-coil = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+io-coil-gif = { group = "io.coil-kt", name = "coil-gif", version.ref = "coil" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

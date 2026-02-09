@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,6 +28,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -43,16 +47,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil.ImageLoader
+import coil.compose.rememberAsyncImagePainter
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
+import coil.request.ImageRequest
 import com.example.stackoverflow.R
 import com.example.stackoverflow.features.details.activities.QuestionDetailActivity
 import com.example.stackoverflow.repository.models.Question
@@ -93,11 +105,16 @@ fun StackOverflowTopBar() {
 @Composable
 fun StackOverflowScreen(viewModel: SearchViewModel = hiltViewModel()) {
     val query by viewModel.query.collectAsState()
+    val showNoInternetDialog by viewModel.showNoInternetDialog.collectAsState()
 
     Column {
         StackOverflowTopBar()
         SearchBar(query, onQueryChange = viewModel::onQueryChange)
         SearchResults(viewModel)
+    }
+
+    if (showNoInternetDialog) {
+        NoInternetDialog(onDismiss = viewModel::dismissNoInternetDialog)
     }
 }
 
@@ -315,4 +332,85 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth()
         )
     }
+}
+
+@Composable
+private fun NoInternetDialog(onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "No Internet Connection",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                GifImage(
+                    modifier = Modifier
+                        .size(200.dp)
+                        .padding(8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Please check your internet connection and try again.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = Color.Gray
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFF48024)
+                    )
+                ) {
+                    Text("OK", color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GifImage(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val imageLoader = ImageLoader.Builder(context)
+        .components {
+            if (android.os.Build.VERSION.SDK_INT >= 28) {
+                add(ImageDecoderDecoder.Factory())
+            } else {
+                add(GifDecoder.Factory())
+            }
+        }
+        .build()
+
+    Image(
+        painter = rememberAsyncImagePainter(
+            ImageRequest.Builder(context)
+                .data(R.drawable.no_internet)
+                .build(),
+            imageLoader = imageLoader
+        ),
+        contentDescription = "No Internet",
+        modifier = modifier,
+        contentScale = ContentScale.Fit
+    )
 }
