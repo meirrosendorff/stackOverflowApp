@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.stackoverflow.repository.models.Question
 import com.example.stackoverflow.repository.models.StackoverflowResult
 import com.example.stackoverflow.repository.stackoverflowRepository.interfaces.StackOverflowRepository
+import com.example.stackoverflow.utils.interfaces.DateUtils
 import com.example.stackoverflow.utils.interfaces.NetworkConnectivityChecker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,14 +15,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val repository: StackOverflowRepository,
-    private val networkChecker: NetworkConnectivityChecker
+    private val networkChecker: NetworkConnectivityChecker,
+    private val dateUtils: DateUtils
 ): ViewModel() {
 
     private val _query = MutableStateFlow("")
@@ -65,7 +66,7 @@ class SearchViewModel @Inject constructor(
 
     fun formatDate(timestamp: Long): String {
         val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-        return sdf.format(Date(timestamp * 1000))
+        return sdf.format(dateUtils.createDate(timestamp * 1000))
     }
 
     private suspend fun searchQuestions(searchQuery: String) {

@@ -4,7 +4,9 @@ import android.content.Context
 import com.example.stackoverflow.repository.stackoverflowApi.interfaces.StackoverflowApi
 import com.example.stackoverflow.repository.stackoverflowRepository.implementations.StackOverflowRepositoryImplementation
 import com.example.stackoverflow.repository.stackoverflowRepository.interfaces.StackOverflowRepository
+import com.example.stackoverflow.utils.implementations.DateUtilsImplementation
 import com.example.stackoverflow.utils.implementations.NetworkConnectivityCheckerImplementation
+import com.example.stackoverflow.utils.interfaces.DateUtils
 import com.example.stackoverflow.utils.interfaces.NetworkConnectivityChecker
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -51,4 +53,8 @@ object StackoverflowModule {
     fun provideNetworkConnectivityChecker(
         @ApplicationContext context: Context
     ): NetworkConnectivityChecker = NetworkConnectivityCheckerImplementation(context)
+
+    @Provides
+    @Singleton
+    fun provideDateUtils(): DateUtils = DateUtilsImplementation()
 }

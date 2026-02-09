@@ -5,19 +5,20 @@ import androidx.lifecycle.viewModelScope
 import com.example.stackoverflow.repository.models.AnswerItem
 import com.example.stackoverflow.repository.models.StackoverflowResult
 import com.example.stackoverflow.repository.stackoverflowRepository.interfaces.StackOverflowRepository
+import com.example.stackoverflow.utils.interfaces.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltViewModel
 class QuestionDetailViewModel @Inject constructor(
-    private val repository: StackOverflowRepository
+    private val repository: StackOverflowRepository,
+    private val dateUtils: DateUtils
 ) : ViewModel() {
 
     private val _answers = MutableStateFlow<List<AnswerItem>>(emptyList())
@@ -49,11 +50,11 @@ class QuestionDetailViewModel @Inject constructor(
 
     fun formatDate(timestamp: Long): String {
         val sdf = SimpleDateFormat("MMM dd yyyy 'at' HH:mm", Locale.getDefault())
-        return sdf.format(Date(timestamp * 1000))
+        return sdf.format(dateUtils.createDate(timestamp * 1000))
     }
 
     fun toTimeAgo(time: Long): String {
-        val now = System.currentTimeMillis()
+        val now = dateUtils.getCurrentTimeMillis()
         val time = time * 1000
         val diff = now - time
 
