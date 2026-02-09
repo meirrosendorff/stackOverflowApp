@@ -16,7 +16,7 @@
         android:name=".StackOverflowApp"
         tools:targetApi="31">
         <activity
-            android:name=".search.activities.SearchActivity"
+            android:name=".features.search.activities.SearchActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.StackOverflow">
@@ -26,6 +26,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".features.details.activities.QuestionDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.StackOverflow" />
     </application>
 
 </manifest>

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp.devtools)
+    id("kotlin-parcelize")
 }
 
 android {
@@ -59,6 +60,8 @@ dependencies {
     implementation(libs.retrofit.converter)
     implementation(libs.hilt)
     implementation(libs.hilt.compose)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.io.coil)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

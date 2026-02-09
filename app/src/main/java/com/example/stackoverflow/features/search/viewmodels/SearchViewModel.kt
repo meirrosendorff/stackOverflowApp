@@ -1,4 +1,4 @@
-package com.example.stackoverflow.search.viewmodels
+package com.example.stackoverflow.features.search.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -50,6 +53,12 @@ class SearchViewModel @Inject constructor(private val repository: StackOverflowR
         currentPage = 1
         hasMore = true
         _questions.value = emptyList()
+    }
+
+
+    fun formatDate(timestamp: Long): String {
+        val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+        return sdf.format(Date(timestamp * 1000))
     }
 
     private suspend fun searchQuestions(searchQuery: String) {

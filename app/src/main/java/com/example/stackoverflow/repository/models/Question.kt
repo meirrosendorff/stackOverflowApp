@@ -1,7 +1,10 @@
 package com.example.stackoverflow.repository.models
 
+import android.os.Parcelable
 import com.fasterxml.jackson.annotation.JsonProperty
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class Question(
     val tags: List<String>,
     val owner: Owner,
@@ -17,4 +20,4 @@ data class Question(
     val link: String? = null,
     val title: String,
     val body: String
-)
+) : Parcelable

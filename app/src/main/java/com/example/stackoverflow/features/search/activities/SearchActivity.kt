@@ -1,11 +1,14 @@
-package com.example.stackoverflow.search.activities
+package com.example.stackoverflow.features.search.activities
 
+import android.content.Intent
 import android.os.Bundle
+import android.os.Parcelable
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,8 +23,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,12 +37,15 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -47,11 +54,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.stackoverflow.R
+import com.example.stackoverflow.features.details.activities.QuestionDetailActivity
 import com.example.stackoverflow.repository.models.Question
-import com.example.stackoverflow.repository.models.StackoverflowResult
-import com.example.stackoverflow.search.viewmodels.SearchViewModel
+import com.example.stackoverflow.features.search.viewmodels.SearchViewModel
 import com.example.stackoverflow.ui.theme.StackOverflowTheme
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 
 @AndroidEntryPoint
 class SearchActivity : ComponentActivity() {
@@ -95,6 +103,7 @@ fun StackOverflowScreen(viewModel: SearchViewModel = hiltViewModel()) {
 
 @Composable
 fun SearchResults(viewModel: SearchViewModel = hiltViewModel()) {
+    val context = LocalContext.current
     val questions by viewModel.questions.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -111,7 +120,18 @@ fun SearchResults(viewModel: SearchViewModel = hiltViewModel()) {
             )
         }
         else -> {
-            QuestionList(questions, isLoading, onLoadMore = viewModel::loadMore)
+            QuestionList(
+                questions = questions,
+                viewModel = viewModel,
+                isLoadingMore = isLoading,
+                onLoadMore = viewModel::loadMore,
+                onQuestionClick = { question: Question ->
+                    val intent = Intent(context, QuestionDetailActivity::class.java).apply {
+                        putExtra("QUESTION", question as Parcelable)
+                    }
+                    context.startActivity(intent)
+                }
+            )
         }
     }
 }
@@ -139,10 +159,10 @@ fun ProgressIndicator() {
 
 
 @Composable
-fun QuestionList(questions: List<Question>, isLoadingMore: Boolean = false, onLoadMore: () -> Unit = {}) {
+fun QuestionList(questions: List<Question>, viewModel: SearchViewModel, isLoadingMore: Boolean = false, onLoadMore: () -> Unit = {}, onQuestionClick: (Question) -> Unit = {}) {
     LazyColumn {
         items(questions) { question ->
-            QuestionRow(question)
+            QuestionRow(question, viewModel, onClick = { onQuestionClick(question) })
             HorizontalDivider()
         }
 
@@ -152,7 +172,7 @@ fun QuestionList(questions: List<Question>, isLoadingMore: Boolean = false, onLo
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
                 }
@@ -166,7 +186,7 @@ fun QuestionList(questions: List<Question>, isLoadingMore: Boolean = false, onLo
                     .height(1.dp)
             ) {
                 if (questions.isNotEmpty()) {
-                    androidx.compose.runtime.LaunchedEffect(Unit) {
+                    LaunchedEffect(Unit) {
                         onLoadMore()
                     }
                 }
@@ -176,10 +196,11 @@ fun QuestionList(questions: List<Question>, isLoadingMore: Boolean = false, onLo
 }
 
 @Composable
-fun QuestionRow(question: Question) {
+fun QuestionRow(question: Question, viewModel: SearchViewModel, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -215,7 +236,7 @@ fun QuestionRow(question: Question) {
 
             Text(
                 text = buildAnnotatedString {
-                    append("asked ${question.creationDate} by ")
+                    append("Asked ${viewModel.formatDate(question.creationDate)} by ")
 
                     withStyle(style = SpanStyle(color = Color(0xFF0074CC))) {
                         append(question.owner.displayName)
@@ -262,6 +283,8 @@ fun QuestionRow(question: Question) {
 
 @Composable
 fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -279,6 +302,14 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = Color.White,
                 focusedContainerColor = Color.White
+            ),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    keyboardController?.hide()
+                }
             ),
             maxLines = 1,
             modifier = Modifier.fillMaxWidth()

@@ -1,5 +1,6 @@
 package com.example.stackoverflow.repository.stackoverflowRepository.implementations
 
+import com.example.stackoverflow.repository.models.AnswerResponse
 import com.example.stackoverflow.repository.models.SearchResponse
 import com.example.stackoverflow.repository.models.StackoverflowResult
 import com.example.stackoverflow.repository.stackoverflowApi.interfaces.StackoverflowApi
@@ -9,6 +10,15 @@ class StackOverflowRepositoryImplementation(private val api: StackoverflowApi): 
     override suspend fun searchQuestions(query: String, page: Int): StackoverflowResult<SearchResponse> {
         return try {
             val response = api.searchQuestions(query, page)
+            StackoverflowResult.Success(response)
+        } catch (e: Exception) {
+            StackoverflowResult.Error(e)
+        }
+    }
+
+    override suspend fun fetchAnswers(questionId: String): StackoverflowResult<AnswerResponse> {
+        return try {
+            val response = api.getAnswers(questionId)
             StackoverflowResult.Success(response)
         } catch (e: Exception) {
             StackoverflowResult.Error(e)

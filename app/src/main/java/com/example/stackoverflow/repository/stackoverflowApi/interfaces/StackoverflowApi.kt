@@ -1,5 +1,6 @@
 package com.example.stackoverflow.repository.stackoverflowApi.interfaces
 
+import com.example.stackoverflow.repository.models.AnswerResponse
 import com.example.stackoverflow.repository.models.SearchResponse
 import retrofit2.Call
 import retrofit2.http.GET
@@ -18,13 +19,12 @@ interface StackoverflowApi {
         @Query("filter") filter: String = "withbody"
     ): SearchResponse
 
-//    // Get answers for a specific question
-//    @GET("2.2/questions/{questionId}/answers")
-//    suspend fun getAnswers(
-//        @Path("questionId") questionId: Long,
-//        @Query("order") order: String = "desc",
-//        @Query("sort") sort: String = "activity",
-//        @Query("site") site: String = "stackoverflow",
-//        @Query("filter") filter: String = "withbody"
-//    ): AnswersResponse
+    @GET("questions/{questionId}/answers")
+    suspend fun getAnswers(
+        @Path("questionId") questionId: String,
+        @Query("order") order: String = "desc",
+        @Query("sort") sort: String = "activity",
+        @Query("site") site: String = "stackoverflow",
+        @Query("filter") filter: String = "withbody"
+    ): AnswerResponse
 }
